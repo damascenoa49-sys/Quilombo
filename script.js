@@ -30,7 +30,7 @@ var googleSat = L.tileLayer(
 var map = L.map('map', {
     center: [-5.5, -45],
     zoom: 7,
-    layers: [esriSat], // Satélite Esri padrão
+    layers: [esriSat],
     preferCanvas: true
 });
 
@@ -67,6 +67,9 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
 
             let layer;
 
+            // =========================
+            // QUILOMBOS (PONTOS)
+            // =========================
             if (tipo === "ponto") {
 
                 layer = L.geoJSON(data, {
@@ -74,7 +77,7 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
 
                     pointToLayer: function (feature, latlng) {
                         return L.circleMarker(latlng, {
-                            radius: 5,
+                            radius: 6,
                             fillColor: "#0077ff",
                             color: "#000",
                             weight: 1,
@@ -99,16 +102,25 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
                     }
                 });
 
-            } else {
-
-                layer = L.geoJSON(data, {
-                    renderer: L.canvas(),
-                    style: estilo
-                });
+                layer.addTo(map);
+                layer.bringToFront(); // 🔥 garante que fique acima dos municípios
 
             }
 
-            layer.addTo(map);
+            // =========================
+            // MUNICÍPIOS (POLÍGONOS)
+            // =========================
+            else {
+
+                layer = L.geoJSON(data, {
+                    renderer: L.canvas(),
+                    style: estilo,
+                    interactive: false // 🔥 não captura clique
+                });
+
+                layer.addTo(map);
+            }
+
             overlayMaps[nome] = layer;
 
             controlLayers.remove();
@@ -119,39 +131,4 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
             console.log(nome + " carregado com sucesso.");
         })
         .catch(error => {
-            console.error("Erro ao carregar " + nome + ":", error);
-        });
-}
-
-// =============================
-// CARREGAMENTO DAS CAMADAS
-// =============================
-
-carregarGeoJSON(
-    "./municipios_ma.json",
-    "Municípios",
-    {
-        color: "#000",
-        weight: 1,
-        fillOpacity: 0.1
-    },
-    "poligono"
-);
-
-setTimeout(() => {
-    carregarGeoJSON(
-        "./quilombos_ma.json",
-        "Quilombos",
-        null,
-        "ponto"
-    );
-}, 500);
-
-// =============================
-// REMOVER LOADER
-// =============================
-
-window.onload = function () {
-    const loader = document.getElementById("loader");
-    if (loader) loader.style.display = "none";
-};
+            console.error("Erro ao carregar " + nome + ":"
