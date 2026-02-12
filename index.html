@@ -1,20 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebGIS - Quilombos e Municípios do Maranhão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    <!-- Custom CSS -->
+    <!-- Seu CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+    <!-- LOADER -->
     <div id="loader">
         <div class="spinner"></div>
         <p>Carregando dados geográficos... (Isso pode levar alguns segundos)</p>
@@ -24,61 +24,6 @@
         </div>
     </div>
 
-   <body>
-
-<div style="padding:10px; background:white; position:relative; z-index:1000;">
-  <input type="text" id="buscaMunicipio" placeholder="Digite o nome do município">
-  <button onclick="filtrarMunicipio()">Buscar</button>
-</div>
-
-<div id="map"></div>
-
-<script src="script.js"></script>
-</body>
-
-    <script>
-        // On-screen logger
-        function logToScreen(msg, type = 'info') {
-            const logDiv = document.getElementById('debug-log');
-            if (logDiv) {
-                const p = document.createElement('p');
-                p.textContent = (type === 'error' ? '❌ ' : 'ℹ️ ') + msg;
-                if (type === 'error') p.style.color = 'red';
-                logDiv.appendChild(p);
-                console.log(msg); // Keep console working
-            }
-        }
-
-        // Global Error Handler
-        window.onerror = function (message, source, lineno, colno, error) {
-            logToScreen("Erro Global: " + message + " (" + source + ":" + lineno + ")", 'error');
-            return false;
-        };
-
-        window.addEventListener('unhandledrejection', function (event) {
-            logToScreen("Promessa não tratada: " + event.reason, 'error');
-        });
-    </script>
-
-    <div id="map"></div>
-
-    <!-- Leaflet JS -->
-    <script>
-        if (typeof L === 'undefined') {
-            logToScreen("ERRO CRÍTICO: A biblioteca Leaflet (JSON/leaflet/leaflet.js) não foi carregada. Verifique os arquivos.", 'error');
-            document.body.innerHTML += '<h1 style="color:red; z-index:9999; position:relative;">ERRO: Leaflet não carregado</h1>';
-        } else {
-            logToScreen("Biblioteca Leaflet carregada com sucesso.");
-        }
-    </script>
-
-    <!-- Data Loaded as JS variables to avoid CORS on local file:// -->
-    <!-- Added defer to allow UI to render before heavy parsing -->
-    <!-- App Script -->
-    <script src="script.js" defer></script>
-</body>
-
-
-</html>
-
-
+    <!-- Barra de Busca -->
+    <div style="padding:10px; background:white; position:relative; z-index:1000;">
+        <input type="text" id="buscaMunicipio" pl
