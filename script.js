@@ -359,3 +359,27 @@ function setupMapEvents() {
         });
     }
 }
+
+logToScreen("Iniciando carregamento de camadas...");
+
+// Municípios
+fetch("./municipios_ma.json")
+    .then(response => response.json())
+    .then(data => {
+        logToScreen("Municípios carregados com sucesso.");
+        L.geoJSON(data).addTo(map);
+    })
+    .catch(error => {
+        logToScreen("Erro ao carregar municípios: " + error, 'error');
+    });
+
+// Quilombos
+fetch("./quilombos_ma.json")
+    .then(response => response.json())
+    .then(data => {
+        logToScreen("Quilombos carregados com sucesso.");
+        L.geoJSON(data).addTo(map);
+    })
+    .catch(error => {
+        logToScreen("Erro ao carregar quilombos: " + error, 'error');
+    });
