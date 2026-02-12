@@ -91,10 +91,9 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
 
                         let popupContent = `
                             <div style="font-size:14px">
-                                <b>Comunidade:</b> ${props.nome || props.NOME || "Não informado"}<br>
-                                <b>Município:</b> ${props.municipio || props.MUNICIPIO || "Não informado"}<br>
-                                <b>Área:</b> ${props.area || props.AREA || "Não informado"}<br>
-                                <b>Situação:</b> ${props.situacao || props.SITUACAO || "Não informado"}
+                                <b>Nome do Quilombo:</b> ${props.NOM_TQ || "Não informado"}<br>
+                                <b>Código:</b> ${props.COD_TQ || "Não informado"}<br>
+                                <b>Status:</b> ${props.STATUS || "Não informado"}
                             </div>
                         `;
 
@@ -103,8 +102,7 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
                 });
 
                 layer.addTo(map);
-                layer.bringToFront(); // 🔥 garante que fique acima dos municípios
-
+                layer.bringToFront(); // garante que fique acima dos municípios
             }
 
             // =========================
@@ -115,7 +113,7 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
                 layer = L.geoJSON(data, {
                     renderer: L.canvas(),
                     style: estilo,
-                    interactive: false // 🔥 não captura clique
+                    interactive: false // não captura clique
                 });
 
                 layer.addTo(map);
@@ -131,4 +129,39 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
             console.log(nome + " carregado com sucesso.");
         })
         .catch(error => {
-            console.error("Erro ao carregar " + nome + ":"
+            console.error("Erro ao carregar " + nome + ":", error);
+        });
+}
+
+// =============================
+// CARREGAMENTO DAS CAMADAS
+// =============================
+
+carregarGeoJSON(
+    "./municipios_ma.json",
+    "Municípios",
+    {
+        color: "#000",
+        weight: 1,
+        fillOpacity: 0.15
+    },
+    "poligono"
+);
+
+setTimeout(() => {
+    carregarGeoJSON(
+        "./quilombos_ma.json",
+        "Quilombos",
+        null,
+        "ponto"
+    );
+}, 500);
+
+// =============================
+// REMOVER LOADER
+// =============================
+
+window.onload = function () {
+    const loader = document.getElementById("loader");
+    if (loader) loader.style.display = "none";
+};
