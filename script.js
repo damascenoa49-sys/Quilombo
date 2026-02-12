@@ -1,34 +1,31 @@
-console.log("Biblioteca Leaflet carregada com sucesso.");
-console.log("Iniciando carregamento de camadas...");
+console.log("Inicializando WebGIS...");
 
 // =============================
 // CAMADAS BASE
 // =============================
 
-// OpenStreetMap
-var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-});
+var osm = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap contributors' }
+);
 
-// Satélite (Esri World Imagery)
 var satelite = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    {
-        attribution: 'Tiles &copy; Esri'
-    }
+    { attribution: 'Tiles &copy; Esri' }
 );
 
 // =============================
-// INICIALIZAÇÃO DO MAPA
+// MAPA (Canvas ativado)
 // =============================
 
 var map = L.map('map', {
-    center: [-5.0, -44.0], // Ajuste se quiser centralizar melhor
+    center: [-5.5, -45],
     zoom: 7,
-    layers: [satelite] // Começa em satélite
+    layers: [satelite],
+    preferCanvas: true
 });
 
-// Controle de camadas base
+// Controle de camadas
 var baseMaps = {
     "Mapa": osm,
     "Satélite": satelite
@@ -36,69 +33,91 @@ var baseMaps = {
 
 var overlayMaps = {};
 
-L.control.layers(baseMaps, overlayMaps).addTo(map);
+var controlLayers = L.control.layers(baseMaps, overlayMaps).addTo(map);
+
 
 // =============================
-// CAMADA MUNICÍPIOS
+// FUNÇÃO PARA CARREGAR GEOJSON
 // =============================
 
-if (typeof municipiosData !== 'undefined') {
+function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
 
-    var municipiosLayer = L.geoJSON(municipiosData, {
-        style: {
-            color: "#000000",
-            weight: 1,
-            fillOpacity: 0.1
-        }
-    }).addTo(map);
-
-    overlayMaps["Municípios"] = municipiosLayer;
-
-    console.log("Camada Municípios carregada com sucesso.");
-
-} else {
-    console.error("Variável 'municipiosData' não encontrada. Verifique Municipios.js");
-}
-
-// =============================
-// CAMADA QUILOMBOS
-// =============================
-
-if (typeof quilombosData !== 'undefined') {
-
-    var quilombosLayer = L.geoJSON(quilombosData, {
-        style: {
-            color: "#800026",
-            weight: 2,
-            fillOpacity: 0.5
-        },
-        onEachFeature: function (feature, layer) {
-            if (feature.properties) {
-                var popupContent = "<b>Comunidade:</b> " + (feature.properties.nome || "Sem nome");
-                layer.bindPopup(popupContent);
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Erro HTTP " + response.status);
             }
-        }
-    }).addTo(map);
+            return response.json();
+        })
+        .then(data => {
 
-    overlayMaps["Quilombos"] = quilombosLayer;
+            let layer;
 
-    console.log("Camada Quilombos carregada com sucesso.");
+            if (tipo === "ponto") {
+                layer = L.geoJSON(data, {
+                    renderer: L.canvas(),
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 4,
+                            fillColor: "#800000",
+                            color: "#000",
+                            weight: 1,
+                            fillOpacity: 0.8
+                        });
+                    }
+                });
+            } else {
+                layer = L.geoJSON(data, {
+                    renderer: L.canvas(),
+                    style: estilo
+                });
+            }
 
-} else {
-    console.error("Variável 'quilombosData' não encontrada. Verifique Quilombos.js");
+            layer.addTo(map);
+            overlayMaps[nome] = layer;
+
+            controlLayers.remove();
+            controlLayers = L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+
+            console.log(nome + " carregado com sucesso.");
+
+        })
+        .catch(error => {
+            console.error("Erro ao carregar " + nome + ":", error);
+        });
 }
 
-// Atualiza controle com overlays
-L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
 
 // =============================
-// OCULTAR TELA DE CARREGAMENTO
+// CARREGAMENTO DAS CAMADAS
+// =============================
+
+carregarGeoJSON(
+    "./municipios_ma.json",
+    "Municípios",
+    {
+        color: "#000",
+        weight: 1,
+        fillOpacity: 0.1
+    },
+    "poligono"
+);
+
+setTimeout(() => {
+    carregarGeoJSON(
+        "./quilombos_ma.json",
+        "Quilombos",
+        null,
+        "ponto"
+    );
+}, 500);
+
+
+// =============================
+// REMOVER LOADER
 // =============================
 
 window.onload = function () {
-    var loading = document.getElementById("loading");
-    if (loading) {
-        loading.style.display = "none";
-    }
-    console.log("Carregamento concluído. Ocultando tela de carregamento...");
+    const loader = document.getElementById("loader");
+    if (loader) loader.style.display = "none";
 };
