@@ -35,7 +35,7 @@ var map = L.map("map", {
 });
 
 // =============================
-// CONTROLE DE CAMADAS
+// CONTROLE
 // =============================
 
 var baseMaps = {
@@ -45,126 +45,107 @@ var baseMaps = {
 };
 
 var overlayMaps = {};
-
-var controlLayers = L.control.layers(baseMaps, overlayMaps, {
-  collapsed: false
-}).addTo(map);
+var controlLayers = L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 // =============================
-// FUNÇÃO PARA CARREGAR GEOJSON
+// VARIÁVEIS GLOBAIS
 // =============================
 
-function carregarGeoJSON(url, nome, estilo, tipo) {
+var municipiosLayer;
+var quilombosLayer;
+var municipiosData;
+var quilombosData;
 
-  fetch(url)
-    .then(function(response) {
-      if (!response.ok) {
-        throw new Error("Erro HTTP " + response.status);
+// =============================
+// CARREGAR MUNICÍPIOS
+// =============================
+
+fetch("./municipios_ma.json")
+  .then(res => res.json())
+  .then(function(data) {
+
+    municipiosData = data;
+
+    municipiosLayer = L.geoJSON(data, {
+      style: {
+        color: "#000",
+        weight: 1,
+        fillOpacity: 0.15
       }
-      return response.json();
-    })
-    .then(function(data) {
+    }).addTo(map);
 
-      var layer;
+    overlayMaps["Municípios"] = municipiosLayer;
+    controlLayers.addOverlay(municipiosLayer, "Municípios");
+  });
 
-      // =========================
-      // QUILOMBOS (PONTOS)
-      // =========================
-      if (tipo === "ponto") {
+// =============================
+// CARREGAR QUILOMBOS
+// =============================
 
-        layer = L.geoJSON(data, {
-          renderer: L.canvas(),
+fetch("./quilombos_ma.json")
+  .then(res => res.json())
+  .then(function(data) {
 
-          pointToLayer: function(feature, latlng) {
-            return L.circleMarker(latlng, {
-              radius: 6,
-              fillColor: "#0077ff",
-              color: "#000",
-              weight: 1,
-              fillOpacity: 0.9
-            });
-          },
+    quilombosData = data;
 
-          onEachFeature: function(feature, layer) {
-
-            var props = feature.properties || {};
-
-            var popupContent =
-              "<div style='font-size:14px'>" +
-              "<b>Nome do Quilombo:</b> " + (props.NOM_TQ || "Não informado") + "<br>" +
-              "<b>Código:</b> " + (props.COD_TQ || "Não informado") + "<br>" +
-              "<b>Status:</b> " + (props.STATUS || "Não informado") +
-              "</div>";
-
-            layer.bindPopup(popupContent);
-          }
+    quilombosLayer = L.geoJSON(data, {
+      pointToLayer: function(feature, latlng) {
+        return L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: "#0077ff",
+          color: "#000",
+          weight: 1,
+          fillOpacity: 0.9
         });
+      },
+      onEachFeature: function(feature, layer) {
 
-        layer.addTo(map);
-        layer.bringToFront();
+        var props = feature.properties || {};
 
+        var popupContent =
+          "<b>Nome:</b> " + (props.NOM_TQ || "") + "<br>" +
+          "<b>Código:</b> " + (props.COD_TQ || "") + "<br>" +
+          "<b>Status:</b> " + (props.STATUS || "");
+
+        layer.bindPopup(popupContent);
       }
+    }).addTo(map);
 
-      // =========================
-      // MUNICÍPIOS (POLÍGONOS)
-      // =========================
-      else {
-
-        layer = L.geoJSON(data, {
-          renderer: L.canvas(),
-          style: estilo,
-          interactive: false
-        });
-
-        layer.addTo(map);
-      }
-
-      overlayMaps[nome] = layer;
-
-      map.removeControl(controlLayers);
-      controlLayers = L.control.layers(baseMaps, overlayMaps, {
-        collapsed: false
-      }).addTo(map);
-
-      console.log(nome + " carregado com sucesso.");
-
-    })
-    .catch(function(error) {
-      console.error("Erro ao carregar " + nome + ":", error);
-    });
-}
+    overlayMaps["Quilombos"] = quilombosLayer;
+    controlLayers.addOverlay(quilombosLayer, "Quilombos");
+  });
 
 // =============================
-// CARREGAMENTO DAS CAMADAS
+// FUNÇÃO DE FILTRO
 // =============================
 
-carregarGeoJSON(
-  "./municipios_ma.json",
-  "Municípios",
-  {
-    color: "#000",
-    weight: 1,
-    fillOpacity: 0.15
-  },
-  "poligono"
-);
+function filtrarMunicipio() {
 
-setTimeout(function() {
-  carregarGeoJSON(
-    "./quilombos_ma.json",
-    "Quilombos",
-    null,
-    "ponto"
-  );
-}, 500);
+  var nomeBusca = document.getElementById("buscaMunicipio").value.toUpperCase();
 
-// =============================
-// REMOVER LOADER
-// =============================
+  if (!nomeBusca) return;
 
-window.onload = function() {
-  var loader = document.getElementById("loader");
-  if (loader) {
-    loader.style.display = "none";
+  // Encontrar município
+  var municipioEncontrado = municipiosData.features.find(function(f) {
+    return f.properties.NOME_MUN.toUpperCase().includes(nomeBusca);
+  });
+
+  if (!municipioEncontrado) {
+    alert("Município não encontrado.");
+    return;
   }
-};
+
+  // Zoom no município
+  var layerMunicipio = L.geoJSON(municipioEncontrado);
+  map.fitBounds(layerMunicipio.getBounds());
+
+  // Filtrar quilombos
+  quilombosLayer.clearLayers();
+
+  var filtrados = quilombosData.features.filter(function(f) {
+    return f.properties.MUNICIPIO &&
+           f.properties.MUNICIPIO.toUpperCase() === municipioEncontrado.properties.NOME_MUN.toUpperCase();
+  });
+
+  quilombosLayer.addData(filtrados);
+}
