@@ -75,30 +75,8 @@ const municipioStyle = {
 function loadLayers() {
     try {
         logToScreen("Iniciando carregamento de camadas...");
-
-        // Load Quilombos
-        // Data is now in global variable 'quilombosData'
-        if (typeof quilombosData !== 'undefined') {
-            logToScreen("Dados de Quilombos encontrados. Carregando...");
-            // Use global variable
-            quilombosLayer = L.geoJSON(quilombosData, {
-                style: quilomboStyle,
-                onEachFeature: function (feature, layer) {
-                    if (feature.properties) {
-                        let popupContent = "<strong>Quilombo:</strong> " + (feature.properties.NOM_TQ || "N/A") + "<br>" +
-                            "<strong>Município:</strong> " + (feature.properties.NOM_TQ_UF || "N/A") + "<br>" +
-                            "<strong>Status:</strong> " + (feature.properties.STATUS || "N/A");
-                        layer.bindPopup(popupContent);
                     }
                 }
-            });
-            quilombosLayer.addTo(map);
-            layerControl.addOverlay(quilombosLayer, "Quilombos");
-            logToScreen("Quilombos carregados com sucesso!");
-        } else {
-            logToScreen("Variável 'quilombosData' não encontrada. Verifique Quilombos.js", 'error');
-        }
-
 
         // Load Municipios
         // Data is now in global variable 'municipiosData'
@@ -383,3 +361,4 @@ fetch("./quilombos_ma.json")
     .catch(error => {
         logToScreen("Erro ao carregar quilombos: " + error, 'error');
     });
+
