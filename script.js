@@ -9,32 +9,46 @@ var osm = L.tileLayer(
     { attribution: '&copy; OpenStreetMap contributors' }
 );
 
-var satelite = L.tileLayer(
+var esriSat = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { attribution: 'Tiles &copy; Esri' }
 );
 
+var googleSat = L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    {
+        maxZoom: 20,
+        subdomains:['mt0','mt1','mt2','mt3'],
+        attribution: '© Google'
+    }
+);
+
 // =============================
-// MAPA (Canvas ativado)
+// MAPA
 // =============================
 
 var map = L.map('map', {
     center: [-5.5, -45],
     zoom: 7,
-    layers: [satelite],
+    layers: [esriSat], // Satélite Esri padrão
     preferCanvas: true
 });
 
-// Controle de camadas
+// =============================
+// CONTROLE DE CAMADAS
+// =============================
+
 var baseMaps = {
-    "Mapa": osm,
-    "Satélite": satelite
+    "OpenStreetMap": osm,
+    "Satélite Esri": esriSat,
+    "Satélite Google": googleSat
 };
 
 var overlayMaps = {};
 
-var controlLayers = L.control.layers(baseMaps, overlayMaps).addTo(map);
-
+var controlLayers = L.control.layers(baseMaps, overlayMaps, {
+    collapsed: false
+}).addTo(map);
 
 // =============================
 // FUNÇÃO PARA CARREGAR GEOJSON
@@ -54,39 +68,60 @@ function carregarGeoJSON(url, nome, estilo = null, tipo = "poligono") {
             let layer;
 
             if (tipo === "ponto") {
+
                 layer = L.geoJSON(data, {
                     renderer: L.canvas(),
+
                     pointToLayer: function (feature, latlng) {
                         return L.circleMarker(latlng, {
-                            radius: 4,
-                            fillColor: "#800000",
+                            radius: 5,
+                            fillColor: "#0077ff",
                             color: "#000",
                             weight: 1,
-                            fillOpacity: 0.8
+                            fillOpacity: 0.9
                         });
+                    },
+
+                    onEachFeature: function (feature, layer) {
+
+                        let props = feature.properties || {};
+
+                        let popupContent = `
+                            <div style="font-size:14px">
+                                <b>Comunidade:</b> ${props.nome || props.NOME || "Não informado"}<br>
+                                <b>Município:</b> ${props.municipio || props.MUNICIPIO || "Não informado"}<br>
+                                <b>Área:</b> ${props.area || props.AREA || "Não informado"}<br>
+                                <b>Situação:</b> ${props.situacao || props.SITUACAO || "Não informado"}
+                            </div>
+                        `;
+
+                        layer.bindPopup(popupContent);
                     }
                 });
+
             } else {
+
                 layer = L.geoJSON(data, {
                     renderer: L.canvas(),
                     style: estilo
                 });
+
             }
 
             layer.addTo(map);
             overlayMaps[nome] = layer;
 
             controlLayers.remove();
-            controlLayers = L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+            controlLayers = L.control.layers(baseMaps, overlayMaps, {
+                collapsed: false
+            }).addTo(map);
 
             console.log(nome + " carregado com sucesso.");
-
         })
         .catch(error => {
             console.error("Erro ao carregar " + nome + ":", error);
         });
 }
-
 
 // =============================
 // CARREGAMENTO DAS CAMADAS
@@ -111,7 +146,6 @@ setTimeout(() => {
         "ponto"
     );
 }, 500);
-
 
 // =============================
 // REMOVER LOADER
