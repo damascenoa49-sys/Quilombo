@@ -24,11 +24,17 @@
         </div>
     </div>
 
-    <!-- Search Control -->
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="Buscar Quilombo ou Município..." title="Digite para filtrar">
-        <button id="search-clear" title="Limpar busca">✖</button>
-    </div>
+   <body>
+
+<div style="padding:10px; background:white; position:relative; z-index:1000;">
+  <input type="text" id="buscaMunicipio" placeholder="Digite o nome do município">
+  <button onclick="filtrarMunicipio()">Buscar</button>
+</div>
+
+<div id="map"></div>
+
+<script src="script.js"></script>
+</body>
 
     <script>
         // On-screen logger
@@ -74,4 +80,5 @@
 
 
 </html>
+
 
