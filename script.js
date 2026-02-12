@@ -1,10 +1,13 @@
-// ===============================
-// INICIALIZAÇÃO DO MAPA
-// ===============================
+// =====================================
+// INICIALIZAÇÃO DO MAPA (OTIMIZADA)
+// =====================================
 
 logToScreen("Inicializando mapa...");
 
-var map = L.map('map').setView([-5.5, -45], 6);
+// Ativa renderização em Canvas (melhora performance)
+var map = L.map('map', {
+    preferCanvas: true
+}).setView([-5.5, -45], 6);
 
 // Camada base
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -14,15 +17,15 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 logToScreen("Mapa base carregado com sucesso.");
 
 
-// ===============================
+// =====================================
 // FUNÇÃO PARA CARREGAR CAMADAS
-// ===============================
+// =====================================
 
 function carregarCamada(url, estilo = null, tipo = "poligono") {
 
     logToScreen("Carregando: " + url);
 
-    fetch(url)
+    return fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error("Erro HTTP: " + response.status);
@@ -35,9 +38,10 @@ function carregarCamada(url, estilo = null, tipo = "poligono") {
 
             if (tipo === "ponto") {
                 camada = L.geoJSON(data, {
+                    renderer: L.canvas(),
                     pointToLayer: function (feature, latlng) {
                         return L.circleMarker(latlng, {
-                            radius: 5,
+                            radius: 4,
                             fillColor: "#800000",
                             color: "#000",
                             weight: 1,
@@ -47,13 +51,14 @@ function carregarCamada(url, estilo = null, tipo = "poligono") {
                 });
             } else {
                 camada = L.geoJSON(data, {
+                    renderer: L.canvas(),
                     style: estilo
                 });
             }
 
             camada.addTo(map);
-            logToScreen("Camada carregada com sucesso: " + url);
 
+            logToScreen("Camada carregada com sucesso: " + url);
         })
         .catch(error => {
             logToScreen("Erro ao carregar " + url + ": " + error.message, "error");
@@ -61,13 +66,13 @@ function carregarCamada(url, estilo = null, tipo = "poligono") {
 }
 
 
-// ===============================
-// CARREGAMENTO DAS CAMADAS
-// ===============================
+// =====================================
+// CARREGAMENTO EM SEQUÊNCIA
+// =====================================
 
 logToScreen("Iniciando carregamento de camadas...");
 
-// Municípios (polígono)
+// 1️⃣ Carrega Municípios primeiro
 carregarCamada(
     "./municipios_ma.json",
     {
@@ -76,13 +81,33 @@ carregarCamada(
         fillOpacity: 0.2
     },
     "poligono"
-);
+)
+.then(() => {
 
-// Quilombos (ponto)
-carregarCamada(
-    "./quilombos_ma.json",
-    null,
-    "ponto"
-);
+    // 2️⃣ Pequeno intervalo antes dos Quilombos
+    return new Promise(resolve => setTimeout(resolve, 500));
 
-logToScreen("Processo de carregamento iniciado.");
+})
+.then(() => {
+
+    return carregarCamada(
+        "./quilombos_ma.json",
+        null,
+        "ponto"
+    );
+
+})
+.then(() => {
+
+    logToScreen("Todas as camadas carregadas.");
+    
+    // Esconde loader
+    const loader = document.getElementById("loader");
+    if (loader) {
+        loader.style.display = "none";
+    }
+
+})
+.catch(error => {
+    logToScreen("Erro geral no carregamento: " + error.message, "error");
+});
