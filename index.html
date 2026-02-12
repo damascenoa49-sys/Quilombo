@@ -57,7 +57,6 @@
     <div id="map"></div>
 
     <!-- Leaflet JS -->
-    <script src="JSON/leaflet/leaflet.js"></script>
     <script>
         if (typeof L === 'undefined') {
             logToScreen("ERRO CRÍTICO: A biblioteca Leaflet (JSON/leaflet/leaflet.js) não foi carregada. Verifique os arquivos.", 'error');
@@ -69,12 +68,10 @@
 
     <!-- Data Loaded as JS variables to avoid CORS on local file:// -->
     <!-- Added defer to allow UI to render before heavy parsing -->
-    <script src="JSON/Quilombos.js" defer></script>
-    <script src="JSON/Municipios.js" defer></script>
-
     <!-- App Script -->
     <script src="script.js" defer></script>
 </body>
 
 
 </html>
+
